@@ -5,74 +5,51 @@ import type { Genre } from '../types/MoviesTypes.ts';
  * Validates that the headers contain exactly "id" and "name".
  * @param headers Array of header names found in the CSV.
  */
-function validateHeaders(headers: string[] | undefined): void {
-  if (!headers || headers.length !== 2) {
-    throw new Error(
-      `Invalid CSV headers: expected exactly "id" and "name", got [${headers?.join(', ') ?? ''}].`,
-    );
-  }
-
-  const normalized = headers.map((header) => header.toLowerCase());
+function validateHeaders(headers: string[]): string[] {
+  const normalized = headers.map((header) => header.trim().toLowerCase());
   if (
+    normalized.length !== 2 ||
     !normalized.includes('id') ||
     !normalized.includes('name') ||
     normalized[0] === normalized[1]
   ) {
     throw new Error(
-      `Invalid CSV headers: expected "id" and "name", got [${headers.join(', ')}].`,
+      `Invalid CSV headers: expected exactly "id" and "name", got [${headers.join(', ')}].`,
     );
   }
+  return normalized;
 }
 
 /**
  * Parses a genres CSV string into an array of validated Genre objects.
- *
- * Requirements:
- * - Exactly two columns: "id" and "name" (case-insensitive, any order).
- * - "id" must be a positive safe integer.
- * - "name" must be a non-empty trimmed string.
- * - Supports UTF-8 BOM, CRLF/LF, quoted fields and escaped quotes.
- * - Skips empty lines.
  *
  * @param csvContent Raw CSV text content.
  * @returns Array of parsed Genre objects.
  * @throws Error if headers, structure or values are invalid.
  */
 export function parseGenresCsv(csvContent: string): Genre[] {
+  const trimmedContent = csvContent.replace(/^\uFEFF/, '').trim();
+  if (!trimmedContent) {
+    throw new Error('CSV file is empty: missing headers.');
+  }
+
   let records: Record<string, string>[];
 
   try {
     records = parse(csvContent, {
-      columns: (headers: string[]) =>
-        headers.map((header) => header.trim().toLowerCase()),
+      columns: (headers: string[]) => validateHeaders(headers),
       skip_empty_lines: true,
       trim: true,
       bom: true,
       relax_column_count: false,
     });
   } catch (error) {
-    throw new Error(
-      `Invalid CSV format: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
-
-  const firstRecord = records[0];
-  if (!firstRecord) {
-    const rawHeaders = csvContent.replace(/^\uFEFF/, '').trim();
-    if (!rawHeaders) {
-      throw new Error('CSV file is empty: missing headers.');
+    const message = (error as Error).message;
+    if (message.startsWith('Invalid CSV headers:')) {
+      throw error;
     }
-    const headerRow = parse(csvContent, {
-      bom: true,
-      trim: true,
-    })[0] as string[] | undefined;
-
-    validateHeaders(headerRow);
-    return [];
+    throw new Error(`Invalid CSV format: ${message}`);
   }
-
-  const columns = Object.keys(firstRecord);
-  validateHeaders(columns);
 
   return records.map((record, index) => {
     const rawId = record['id'];
