@@ -60,6 +60,14 @@ npx tsx src/back-end/backend-cli.ts create-database --path ./data/ma-base.sqlite
 
 La commande initialise le schéma sans supprimer les données d'une base existante.
 
+## Gestion des genres
+
+Pour importer ou mettre à jour les genres depuis un fichier CSV (contenant les colonnes `id` et `name`, comme `data/genres.csv`) :
+
+````sh
+npx tsx src/back-end/backend-cli.ts add-genres ./data/genres.csv
+npx tsx src/back-end/backend-cli.ts --path ./data/ma-base.sqlite add-genres ./data/genres.csv
+
 ## API locale
 
 | Méthode | Route                 | Description                                                       |
@@ -72,7 +80,7 @@ Les routes des films acceptent les paramètres `language`, `page` et `region`. E
 
 ```text
 /api/movies/popular?language=fr-FR&page=1&region=FR
-```
+````
 
 ## Vérifications
 
