@@ -68,6 +68,14 @@ Pour importer ou mettre à jour les genres depuis un fichier CSV (contenant les 
 npx tsx src/back-end/backend-cli.ts add-genres ./data/genres.csv
 npx tsx src/back-end/backend-cli.ts --path ./data/ma-base.sqlite add-genres ./data/genres.csv
 
+## Gestion des pays
+
+Pour importer ou mettre à jour les pays de production depuis un fichier CSV (contenant les colonnes `code` et `name`, comme `data/countries.csv`) :
+
+```sh
+npx tsx src/back-end/backend-cli.ts add-countries ./data/countries.csv
+npx tsx src/back-end/backend-cli.ts --path ./data/ma-base.sqlite add-countries ./data/countries.csv
+
 ## API locale
 
 | Méthode | Route                 | Description                                                       |
