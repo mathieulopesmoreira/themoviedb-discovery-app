@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { listCountries } from './database/country-repository.ts';
 import { listGenres } from './database/genre-repository.ts';
 
 const { DEFAULT_DATABASE_PATH, closeMock, getDatabaseMock, realHolder } =
@@ -153,7 +154,6 @@ describe('backend-cli.ts', () => {
         return db;
       });
 
-      // Trigger schema module import so realHolder.getDatabase is populated
       await import('./database/schema.ts');
 
       const setupDb = realHolder.getDatabase(dbPath);
@@ -182,6 +182,117 @@ describe('backend-cli.ts', () => {
 
         const verifyDb = realHolder.getDatabase(dbPath);
         expect(listGenres(verifyDb)).toEqual([{ id: 18, name: 'Drame' }]);
+        verifyDb.close();
+      } finally {
+        logSpy.mockRestore();
+      }
+    });
+  });
+
+  describe('add-countries', () => {
+    it('imports countries into the selected database, closes connection and logs result', async () => {
+      const dir = mkdtempSync(join(tmpdir(), 'cli-countries-'));
+      const dbPath = join(dir, 'movies.sqlite');
+      const csvPath = join(dir, 'countries.csv');
+      writeFileSync(
+        csvPath,
+        'code,name\nUS,United States\nFR,France\n',
+        'utf8',
+      );
+
+      let closed = false;
+      getDatabaseMock.mockImplementation((path: string) => {
+        const db = realHolder.getDatabase(path);
+        const origClose = db.close.bind(db);
+        db.close = () => {
+          closed = true;
+          origClose();
+        };
+        return db;
+      });
+
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        await runCliWithArgs(['--path', dbPath, 'add-countries', csvPath]);
+
+        expect(closed).toBe(true);
+        expect(logSpy).toHaveBeenCalledWith(
+          `Imported 2 countries into ${resolve(dbPath)}`,
+        );
+
+        const verifyDb = realHolder.getDatabase(dbPath);
+        expect(listCountries(verifyDb)).toEqual([
+          { code: 'FR', name: 'France' },
+          { code: 'US', name: 'United States' },
+        ]);
+        verifyDb.close();
+      } finally {
+        logSpy.mockRestore();
+      }
+    });
+
+    it('validates the CSV before opening the database', async () => {
+      const dir = mkdtempSync(join(tmpdir(), 'cli-countries-invalid-'));
+      const csvPath = join(dir, 'invalid.csv');
+      writeFileSync(csvPath, 'invalid,headers\nFR,France\n', 'utf8');
+
+      await expect(runCliWithArgs(['add-countries', csvPath])).rejects.toThrow(
+        /Invalid CSV headers/,
+      );
+      expect(getDatabaseMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('clean-countries', () => {
+    it('deletes only unused countries, closes the database and logs the result', async () => {
+      const dir = mkdtempSync(join(tmpdir(), 'cli-clean-countries-'));
+      const dbPath = join(dir, 'movies.sqlite');
+
+      let closed = false;
+      getDatabaseMock.mockImplementation((path: string) => {
+        const db = realHolder.getDatabase(path);
+        const origClose = db.close.bind(db);
+        db.close = () => {
+          closed = true;
+          origClose();
+        };
+        return db;
+      });
+
+      await import('./database/schema.ts');
+
+      const setupDb = realHolder.getDatabase(dbPath);
+      setupDb
+        .prepare(
+          "INSERT INTO countries (code, name) VALUES ('FR', ?), ('US', ?)",
+        )
+        .run('France', 'United States');
+      setupDb
+        .prepare(
+          `INSERT INTO movies (id, title, original_title, original_language, overview, collected_at)
+           VALUES (1, 'Film', 'Film', 'fr', 'Desc', '2026-01-01T00:00:00Z')`,
+        )
+        .run();
+      setupDb
+        .prepare(
+          "INSERT INTO production_countries (movie_id, country_code) VALUES (1, 'FR')",
+        )
+        .run();
+      setupDb.close();
+
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        await runCliWithArgs(['--path', dbPath, 'clean-countries']);
+
+        expect(closed).toBe(true);
+        expect(logSpy).toHaveBeenCalledWith(
+          `Removed 1 unused countries from ${resolve(dbPath)}`,
+        );
+
+        const verifyDb = realHolder.getDatabase(dbPath);
+        expect(listCountries(verifyDb)).toEqual([
+          { code: 'FR', name: 'France' },
+        ]);
         verifyDb.close();
       } finally {
         logSpy.mockRestore();
