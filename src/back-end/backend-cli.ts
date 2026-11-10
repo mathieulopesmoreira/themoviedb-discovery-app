@@ -3,11 +3,15 @@ import { Command } from 'commander';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
+  cleanUnusedCountries,
+  upsertCountries,
+} from './database/country-repository.ts';
+import {
   cleanUnusedGenres,
   upsertGenres,
 } from './database/genre-repository.ts';
 import { DEFAULT_DATABASE_PATH, getDatabase } from './database/schema.ts';
-import { parseGenresCsv } from './utils/csv-parser.ts';
+import { parseCountriesCsv, parseGenresCsv } from './utils/csv-parser.ts';
 
 /** Command-line interface for movie database operations. */
 const program = new Command()
@@ -70,6 +74,44 @@ program
     }
     console.log(
       `Removed ${deletedCount} unused genres from ${resolve(databasePath)}`,
+    );
+  });
+
+program
+  .command('add-countries')
+  .description('Import or update production countries from a CSV file')
+  .argument('<csv-file>', 'path to the countries CSV file')
+  .option('-p, --path <path>', 'path to the SQLite database file')
+  .action((csvFile: string, { path }: { path?: string }) => {
+    const csvContent = readFileSync(resolve(csvFile), 'utf8');
+    const countries = parseCountriesCsv(csvContent);
+    const databasePath = resolveDatabasePath(path);
+    const database = getDatabase(databasePath);
+    try {
+      upsertCountries(database, countries);
+    } finally {
+      database.close();
+    }
+    console.log(
+      `Imported ${countries.length} countries into ${resolve(databasePath)}`,
+    );
+  });
+
+program
+  .command('clean-countries')
+  .description('Delete unused countries that are not associated with any movie')
+  .option('-p, --path <path>', 'path to the SQLite database file')
+  .action(({ path }: { path?: string }) => {
+    const databasePath = resolveDatabasePath(path);
+    const database = getDatabase(databasePath);
+    let deletedCount = 0;
+    try {
+      deletedCount = cleanUnusedCountries(database);
+    } finally {
+      database.close();
+    }
+    console.log(
+      `Removed ${deletedCount} unused countries from ${resolve(databasePath)}`,
     );
   });
 
