@@ -68,6 +68,14 @@ Pour importer ou mettre à jour les genres depuis un fichier CSV (contenant les 
 npx tsx src/back-end/backend-cli.ts add-genres ./data/genres.csv
 npx tsx src/back-end/backend-cli.ts --path ./data/ma-base.sqlite add-genres ./data/genres.csv
 
+## Gestion des films
+
+Pour importer ou mettre à jour les films depuis un fichier CSV (comme `data/movies.csv`) :
+
+```sh
+npx tsx src/back-end/backend-cli.ts add-movies ./data/movies.csv
+npx tsx src/back-end/backend-cli.ts --path ./data/ma-base.sqlite add-movies ./data/movies.csv
+
 ## API locale
 
 | Méthode | Route                 | Description                                                       |
