@@ -5,6 +5,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { listCountries } from './database/country-repository.ts';
 import { listGenres } from './database/genre-repository.ts';
+import { listMovies } from './database/movie-repository.ts';
 
 const { DEFAULT_DATABASE_PATH, closeMock, getDatabaseMock, realHolder } =
   vi.hoisted(() => ({
@@ -154,6 +155,7 @@ describe('backend-cli.ts', () => {
         return db;
       });
 
+      // Trigger schema module import so realHolder.getDatabase is populated
       await import('./database/schema.ts');
 
       const setupDb = realHolder.getDatabase(dbPath);
@@ -297,6 +299,70 @@ describe('backend-cli.ts', () => {
       } finally {
         logSpy.mockRestore();
       }
+    });
+  });
+
+  describe('add-movies', () => {
+    it('imports movies into the selected database, closes connection and logs result', async () => {
+      const dir = mkdtempSync(join(tmpdir(), 'cli-movies-'));
+      const dbPath = join(dir, 'movies.sqlite');
+      const csvPath = join(dir, 'movies.csv');
+      const csv = `id,title,original_title,original_language,overview,release_date,popularity,vote_average,vote_count,poster_path,backdrop_path,runtime,budget,revenue,genres,production_countries
+550,Fight Club,Fight Club,en,An insomniac office worker...,1999-10-15,63.869,8.433,26280,/poster.jpg,/backdrop.jpg,139,63000000,100853753,"[18,53]","[{""iso_3166_1"":""US"",""name"":""United States of America""}]"`;
+      writeFileSync(csvPath, csv, 'utf8');
+
+      let closed = false;
+      getDatabaseMock.mockImplementation((path: string) => {
+        const db = realHolder.getDatabase(path);
+        const origClose = db.close.bind(db);
+        db.close = () => {
+          closed = true;
+          origClose();
+        };
+        return db;
+      });
+
+      // Trigger schema module import so realHolder.getDatabase is populated
+      await import('./database/schema.ts');
+
+      const setupDb = realHolder.getDatabase(dbPath);
+      setupDb
+        .prepare('INSERT INTO genres (id, name) VALUES (18, ?), (53, ?)')
+        .run('Drame', 'Thriller');
+      setupDb
+        .prepare('INSERT INTO countries (code, name) VALUES (?, ?)')
+        .run('US', 'United States');
+      setupDb.close();
+
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        await runCliWithArgs(['--path', dbPath, 'add-movies', csvPath]);
+
+        expect(closed).toBe(true);
+        expect(logSpy).toHaveBeenCalledWith(
+          `Imported 1 movies into ${resolve(dbPath)}`,
+        );
+
+        const verifyDb = realHolder.getDatabase(dbPath);
+        const movies = listMovies(verifyDb);
+        expect(movies).toHaveLength(1);
+        expect(movies[0].id).toBe(550);
+        expect(movies[0].title).toBe('Fight Club');
+        verifyDb.close();
+      } finally {
+        logSpy.mockRestore();
+      }
+    });
+
+    it('validates the CSV before opening the database', async () => {
+      const dir = mkdtempSync(join(tmpdir(), 'cli-movies-invalid-'));
+      const csvPath = join(dir, 'invalid.csv');
+      writeFileSync(csvPath, 'invalid,headers\n1,Test\n', 'utf8');
+
+      await expect(runCliWithArgs(['add-movies', csvPath])).rejects.toThrow(
+        /Invalid CSV headers for movies/,
+      );
+      expect(getDatabaseMock).not.toHaveBeenCalled();
     });
   });
 });

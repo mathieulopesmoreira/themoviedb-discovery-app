@@ -58,9 +58,9 @@ export function findMovieById(
   database: DatabaseSync,
   id: number,
 ): DatabaseMovie | undefined {
-  const row = database.prepare('SELECT * FROM movies WHERE id = ?').get(id) as
-    | MovieRow
-    | undefined;
+  const row = database
+    .prepare('SELECT * FROM movies WHERE id = ?')
+    .get(id) as unknown as MovieRow | undefined;
 
   return row ? hydrateMovie(database, row) : undefined;
 }
@@ -73,7 +73,7 @@ export function findMovieById(
 export function listMovies(database: DatabaseSync): DatabaseMovie[] {
   const rows = database
     .prepare('SELECT * FROM movies ORDER BY id ASC')
-    .all() as MovieRow[];
+    .all() as unknown as MovieRow[];
 
   return rows.map((row) => hydrateMovie(database, row));
 }

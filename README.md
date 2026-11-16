@@ -92,6 +92,14 @@ npx tsx src/back-end/backend-cli.ts clean-countries
 npx tsx src/back-end/backend-cli.ts --path ./data/ma-base.sqlite clean-countries
 ```
 
+## Gestion des films
+
+Pour importer ou mettre à jour les films depuis un fichier CSV (comme `data/movies.csv`) :
+
+````sh
+npx tsx src/back-end/backend-cli.ts add-movies ./data/movies.csv
+npx tsx src/back-end/backend-cli.ts --path ./data/ma-base.sqlite add-movies ./data/movies.csv
+
 ## API locale
 
 | Méthode | Route                  | Description                                                       |
@@ -105,7 +113,7 @@ Les routes des films acceptent les paramètres `language`, `page` et `region`. E
 
 ```text
 /api/movies/popular?language=fr-FR&page=1&region=FR
-```
+````
 
 ## Vérifications
 

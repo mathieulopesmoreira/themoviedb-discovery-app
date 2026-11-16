@@ -2,6 +2,7 @@
 import { Command } from 'commander';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { upsertMovies } from './database/movie-repository.ts';
 import {
   cleanUnusedCountries,
   upsertCountries,
@@ -11,7 +12,11 @@ import {
   upsertGenres,
 } from './database/genre-repository.ts';
 import { DEFAULT_DATABASE_PATH, getDatabase } from './database/schema.ts';
-import { parseCountriesCsv, parseGenresCsv } from './utils/csv-parser.ts';
+import {
+  parseCountriesCsv,
+  parseGenresCsv,
+  parseMoviesCsv,
+} from './utils/csv-parser.ts';
 
 /** Command-line interface for movie database operations. */
 const program = new Command()
@@ -112,6 +117,26 @@ program
     }
     console.log(
       `Removed ${deletedCount} unused countries from ${resolve(databasePath)}`,
+    );
+  });
+
+program
+  .command('add-movies')
+  .description('Import or update movies from a CSV file')
+  .argument('<csv-file>', 'path to the movies CSV file')
+  .option('-p, --path <path>', 'path to the SQLite database file')
+  .action((csvFile: string, { path }: { path?: string }) => {
+    const csvContent = readFileSync(resolve(csvFile), 'utf8');
+    const movies = parseMoviesCsv(csvContent);
+    const databasePath = resolveDatabasePath(path);
+    const database = getDatabase(databasePath);
+    try {
+      upsertMovies(database, movies);
+    } finally {
+      database.close();
+    }
+    console.log(
+      `Imported ${movies.length} movies into ${resolve(databasePath)}`,
     );
   });
 
