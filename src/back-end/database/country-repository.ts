@@ -59,3 +59,17 @@ export function upsertCountries(
     throw error;
   }
 }
+
+/**
+ * Deletes countries that are not associated with any movie in the production_countries table.
+ * @param database The SQLite database connection.
+ * @returns The number of unused countries deleted.
+ */
+export function cleanUnusedCountries(database: DatabaseSync): number {
+  const result = database
+    .prepare(
+      'DELETE FROM countries WHERE code NOT IN (SELECT DISTINCT country_code FROM production_countries)',
+    )
+    .run();
+  return Number(result.changes);
+}
