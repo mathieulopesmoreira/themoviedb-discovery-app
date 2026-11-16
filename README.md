@@ -94,11 +94,12 @@ npx tsx src/back-end/backend-cli.ts --path ./data/ma-base.sqlite clean-countries
 
 ## API locale
 
-| Méthode | Route                 | Description                                                       |
-| ------- | --------------------- | ----------------------------------------------------------------- |
-| `GET`   | `/api/health`         | Vérifie que le serveur répond.                                    |
-| `GET`   | `/api/movies/popular` | Renvoie les films populaires.                                     |
-| `GET`   | `/api/movies/:id`     | Renvoie les détails du film correspondant à son identifiant TMDB. |
+| Méthode | Route                  | Description                                                       |
+| ------- | ---------------------- | ----------------------------------------------------------------- |
+| `GET`   | `/api/health`          | Vérifie que le serveur répond.                                    |
+| `GET`   | `/api/movies/popular`  | Renvoie les films populaires.                                     |
+| `GET`   | `/api/movies/:id`      | Renvoie les détails du film correspondant à son identifiant TMDB. |
+| `GET`   | `/api/discover/movies` | Renvoie une page de films pour une année de sortie principale.    |
 
 Les routes des films acceptent les paramètres `language`, `page` et `region`. Exemple :
 
