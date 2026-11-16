@@ -64,25 +64,50 @@ La commande initialise le schéma sans supprimer les données d'une base existan
 
 Pour importer ou mettre à jour les genres depuis un fichier CSV (contenant les colonnes `id` et `name`, comme `data/genres.csv`) :
 
-````sh
+```sh
 npx tsx src/back-end/backend-cli.ts add-genres ./data/genres.csv
 npx tsx src/back-end/backend-cli.ts --path ./data/ma-base.sqlite add-genres ./data/genres.csv
+```
+
+Pour supprimer les genres qui ne sont associés à aucun film :
+
+```sh
+npx tsx src/back-end/backend-cli.ts clean-genres
+npx tsx src/back-end/backend-cli.ts --path ./data/ma-base.sqlite clean-genres
+```
+
+## Gestion des pays
+
+Pour importer ou mettre à jour les pays de production depuis un fichier CSV (contenant les colonnes `code` et `name`, comme `data/countries.csv`) :
+
+```sh
+npx tsx src/back-end/backend-cli.ts add-countries ./data/countries.csv
+npx tsx src/back-end/backend-cli.ts --path ./data/ma-base.sqlite add-countries ./data/countries.csv
+```
+
+Pour supprimer les pays qui ne sont associés à aucun film :
+
+```sh
+npx tsx src/back-end/backend-cli.ts clean-countries
+npx tsx src/back-end/backend-cli.ts --path ./data/ma-base.sqlite clean-countries
+```
 
 ## Gestion des films
 
 Pour importer ou mettre à jour les films depuis un fichier CSV (comme `data/movies.csv`) :
 
-```sh
+````sh
 npx tsx src/back-end/backend-cli.ts add-movies ./data/movies.csv
 npx tsx src/back-end/backend-cli.ts --path ./data/ma-base.sqlite add-movies ./data/movies.csv
 
 ## API locale
 
-| Méthode | Route                 | Description                                                       |
-| ------- | --------------------- | ----------------------------------------------------------------- |
-| `GET`   | `/api/health`         | Vérifie que le serveur répond.                                    |
-| `GET`   | `/api/movies/popular` | Renvoie les films populaires.                                     |
-| `GET`   | `/api/movies/:id`     | Renvoie les détails du film correspondant à son identifiant TMDB. |
+| Méthode | Route                  | Description                                                       |
+| ------- | ---------------------- | ----------------------------------------------------------------- |
+| `GET`   | `/api/health`          | Vérifie que le serveur répond.                                    |
+| `GET`   | `/api/movies/popular`  | Renvoie les films populaires.                                     |
+| `GET`   | `/api/movies/:id`      | Renvoie les détails du film correspondant à son identifiant TMDB. |
+| `GET`   | `/api/discover/movies` | Renvoie une page de films pour une année de sortie principale.    |
 
 Les routes des films acceptent les paramètres `language`, `page` et `region`. Exemple :
 

@@ -77,3 +77,7 @@ describe('back-end server routes', () => {
     });
   });
 });
+
+it('registers the /api/discover/movies route', () => {
+  expect(routeHandlers.has('/api/discover/movies')).toBe(true);
+});

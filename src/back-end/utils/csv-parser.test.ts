@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parseGenresCsv, parseMoviesCsv } from './csv-parser.ts';
+import {
+  parseCountriesCsv,
+  parseGenresCsv,
+  parseMoviesCsv,
+} from './csv-parser.ts';
 
 describe('csv-parser.ts', () => {
   describe('parseGenresCsv', () => {
@@ -77,6 +81,82 @@ describe('csv-parser.ts', () => {
     });
   });
 
+  describe('parseCountriesCsv', () => {
+    it('parses standard CSV with code,name headers', () => {
+      const csv = 'code,name\nFR,France\nUS,United States\n';
+      expect(parseCountriesCsv(csv)).toEqual([
+        { code: 'FR', name: 'France' },
+        { code: 'US', name: 'United States' },
+      ]);
+    });
+
+    it('accepts headers in any order and case-insensitively with spaces around values', () => {
+      const csv = '  NAME , CODE \n France , FR \n Germany , DE ';
+      expect(parseCountriesCsv(csv)).toEqual([
+        { code: 'FR', name: 'France' },
+        { code: 'DE', name: 'Germany' },
+      ]);
+    });
+
+    it('supports UTF-8 BOM, CRLF line endings, empty lines, commas in quotes and escaped quotes', () => {
+      const csv =
+        '\uFEFFcode,name\r\n\r\nFR,"France, Métropolitaine"\r\nGB,"Royaume ""Uni"""\r\n\r\n';
+      expect(parseCountriesCsv(csv)).toEqual([
+        { code: 'FR', name: 'France, Métropolitaine' },
+        { code: 'GB', name: 'Royaume "Uni"' },
+      ]);
+    });
+
+    it('returns an empty array when only valid headers are present', () => {
+      expect(parseCountriesCsv('code,name\n\n')).toEqual([]);
+    });
+
+    it('throws an explicit error when the CSV file is completely empty', () => {
+      expect(() => parseCountriesCsv('   \n  ')).toThrow(
+        /CSV file is empty: missing headers/,
+      );
+    });
+
+    it('throws an explicit error when headers are invalid or duplicated', () => {
+      expect(() => parseCountriesCsv('code,title\nFR,France')).toThrow(
+        /Invalid CSV headers/,
+      );
+      expect(() => parseCountriesCsv('code\nFR')).toThrow(
+        /Invalid CSV headers/,
+      );
+      expect(() => parseCountriesCsv('code,code\nFR,FR')).toThrow(
+        /Invalid CSV headers/,
+      );
+    });
+
+    it('throws an explicit error on malformed CSV quotes', () => {
+      expect(() => parseCountriesCsv('code,name\nFR,"Unclosed quote')).toThrow(
+        /Invalid CSV format/,
+      );
+    });
+
+    it('throws an explicit error when code is not two uppercase letters', () => {
+      expect(() => parseCountriesCsv('code,name\nfr,France')).toThrow(
+        /Invalid country code/,
+      );
+      expect(() => parseCountriesCsv('code,name\nFRA,France')).toThrow(
+        /Invalid country code/,
+      );
+      expect(() => parseCountriesCsv('code,name\nF1,France')).toThrow(
+        /Invalid country code/,
+      );
+      expect(() => parseCountriesCsv('code,name\n,France')).toThrow(
+        /Invalid country code/,
+      );
+    });
+
+    it('throws an explicit error when name is empty', () => {
+      expect(() => parseCountriesCsv('code,name\nFR,   ')).toThrow(
+        /Empty country name/,
+      );
+    });
+  });
+
   describe('parseMoviesCsv', () => {
     const headers = [
       'id',
@@ -106,8 +186,7 @@ describe('csv-parser.ts', () => {
     };
 
     it('parses a valid movies CSV with all fields', () => {
-      const csv = `${headerLine}
-550,Fight Club,Fight Club,en,"An insomniac office worker...",1999-10-15,63.869,8.433,26280,/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg,/hZkgoQYus5vegHoetLkCJzb17zJ.jpg,139,63000000,100853753,"[18,53]","[{""iso_3166_1"":""US"",""name"":""United States of America""}]"`;
+      const csv = `${headerLine}\n550,Fight Club,Fight Club,en,"An insomniac office worker...",1999-10-15,63.869,8.433,26280,/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg,/hZkgoQYus5vegHoetLkCJzb17zJ.jpg,139,63000000,100853753,"[18,53]","[{""iso_3166_1"":""US"",""name"":""United States of America""}]"`;
 
       const movies = parseMoviesCsv(csv);
       expect(movies).toHaveLength(1);
@@ -160,8 +239,7 @@ describe('csv-parser.ts', () => {
     });
 
     it('handles invalid numbers, non-array json, and invalid country codes gracefully', () => {
-      const csv = `${headerLine}
-2,Edge Movie,Original,fr,Description,2020-01-01,notanumber,invalid,notacount,/poster.jpg,/backdrop.jpg,invalid_rt,invalid_b,invalid_r,"{""not"":""array""}","[{""iso_3166_1"":""INVALID""},{""iso_3166_1"":123},{}]"`;
+      const csv = `${headerLine}\n2,Edge Movie,Original,fr,Description,2020-01-01,notanumber,invalid,notacount,/poster.jpg,/backdrop.jpg,invalid_rt,invalid_b,invalid_r,"{""not"":""array""}","[{""iso_3166_1"":""INVALID""},{""iso_3166_1"":123},{}]"`;
       const movies = parseMoviesCsv(csv);
       expect(movies).toHaveLength(1);
       expect(movies[0]).toMatchObject({
@@ -195,8 +273,7 @@ describe('csv-parser.ts', () => {
     });
 
     it('handles non-array json in production_countries', () => {
-      const csv = `${headerLine}
-4,Movie JSON Obj,Original,en,Desc,2020-01-01,10,7,50,/poster.jpg,/backdrop.jpg,90,1000,2000,"[12]","{""not"":""array""}"`;
+      const csv = `${headerLine}\n4,Movie JSON Obj,Original,en,Desc,2020-01-01,10,7,50,/poster.jpg,/backdrop.jpg,90,1000,2000,"[12]","{""not"":""array""}"`;
       const movies = parseMoviesCsv(csv);
       expect(movies[0].genre_ids).toEqual([12]);
       expect(movies[0].country_codes).toEqual([]);
