@@ -5,6 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router';
 import App from './App';
 
+vi.mock('./pages/DashboardPage/DashboardPage', () => ({
+  default: () => <div>Dashboard page</div>,
+}));
+
 afterEach(() => {
   cleanup();
   localStorage.clear();
