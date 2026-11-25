@@ -1,0 +1,92 @@
+.top-rated-movie-widget {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 240px;
+  max-width: 100%;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--page-foreground);
+}
+
+.top-rated-movie-widget-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.top-rated-movie-widget-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.top-rated-movie-widget-poster,
+.top-rated-movie-widget-poster-placeholder {
+  flex-shrink: 0;
+  width: 72px;
+  height: 108px;
+  border-radius: 8px;
+}
+
+.top-rated-movie-widget-poster {
+  object-fit: cover;
+  border: 1px solid var(--line);
+}
+
+.top-rated-movie-widget-poster-placeholder {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border: 1px dashed var(--line);
+  background: var(--page-background);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.top-rated-movie-widget-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.top-rated-movie-widget-movie-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  color: var(--heading);
+}
+
+.top-rated-movie-widget-meta,
+.top-rated-movie-widget-status {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+}
+
+.top-rated-movie-widget-rating {
+  margin: 0.25rem 0 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.top-rated-movie-widget-error {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #dc2626;
+}
